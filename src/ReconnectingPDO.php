@@ -1,9 +1,5 @@
 <?php
 
-/*
- * All rights reserved © 2016 Legow Hosting Kft.
- */
-
 namespace Legow\ReconnectingPDO;
 
 /**
@@ -102,7 +98,7 @@ class ReconnectingPDO
         try {
             return call_user_func_array([$this->db, $method], $arguments);
         } catch (\PDOException $ex) {
-            if (!preg_match("/General error: 2006/", $ex->getMessage())) {
+            if (!stristr($ex->getMessage(), "server has gone away") || $ex->getCode() != 'HY000') {
                 throw $ex;
             }
             if ($this->reconnectCounter < $this->maxReconnection) {
