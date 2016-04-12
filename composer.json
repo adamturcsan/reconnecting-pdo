@@ -1,0 +1,20 @@
+{
+    "name": "legow/reconnecting-pdo",
+    "description": "Description of project reconnecting-pdo.",
+    "version":"0.1.1.2",
+    "authors": [
+        {
+            "name": "Turcsán Ádám",
+            "email": "turcsan.adam@legow.hu"
+        }
+    ],
+    "require": {
+        "php": ">=5.6.4",
+        "ext-pdo_mysql":"^1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Legow\\ReconnectingPDO\\": "src/"
+        }
+    }
+}
