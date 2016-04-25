@@ -12,6 +12,9 @@
         "php": ">=5.6.4",
         "ext-pdo": "*"
     },
+    "require-dev": {
+        "phpunit/PHPUnit": "~4.0"
+    },
     "suggest": {
             "ext-pdo_mysql": "For MySQL or MariaDB databases",
             "ext-pdo_sqlsrv": "For MSSQL databases on Windows platform",
@@ -23,6 +26,11 @@
     "autoload": {
         "psr-4": {
             "Legow\\ReconnectingPDO\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LegowTest\\ReconnectingPDO\\": "test/"
         }
     }
 }

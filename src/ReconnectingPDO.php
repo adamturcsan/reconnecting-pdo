@@ -105,6 +105,9 @@ class ReconnectingPDO
                 $this->reconnectDb();
                 $returnValue = $this->call($method, $arguments); // Retry
                 $this->resetCounter();
+                if($returnValue instanceof \PDOStatement) {
+                    return new ReconnectingPDOStatement($returnValue, $this->db, $this->maxReconnection);
+                }
                 return $returnValue;
             } else {
                 throw $ex;
