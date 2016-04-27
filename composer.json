@@ -1,7 +1,7 @@
 {
     "name": "legow/reconnecting-pdo",
     "description": "Description of project reconnecting-pdo.",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "authors": [
         {
             "name": "Turcsán Ádám",
