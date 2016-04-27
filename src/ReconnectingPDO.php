@@ -96,7 +96,7 @@ class ReconnectingPDO
     protected function call($method, $arguments)
     {
         try {
-            return call_user_func_array([$this->db, $method], $arguments);
+            $returnValue = call_user_func_array([$this->db, $method], $arguments);
         } catch (\PDOException $ex) {
             if (!stristr($ex->getMessage(), "server has gone away") || $ex->getCode() != 'HY000') {
                 throw $ex;
@@ -105,14 +105,14 @@ class ReconnectingPDO
                 $this->reconnectDb();
                 $returnValue = $this->call($method, $arguments); // Retry
                 $this->resetCounter();
-                if($returnValue instanceof \PDOStatement) {
-                    return new ReconnectingPDOStatement($returnValue, $this->db, $this->maxReconnection);
-                }
-                return $returnValue;
             } else {
                 throw $ex;
             }
         }
+        if($returnValue instanceof \PDOStatement) {
+            return new ReconnectingPDOStatement($returnValue, $this->db, $this->maxReconnection);
+        }
+        return $returnValue;
     }
 
     protected function reconnectDb()

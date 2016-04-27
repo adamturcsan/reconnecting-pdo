@@ -12,4 +12,21 @@ All rights reserved © 2016 Legow Hosting Kft.
          stopOnFailure="true">
 </phpunit-->
 
-<phpunit colors="false" />
+<phpunit
+    colors="true"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true"
+    verbose="true"
+    stopOnFailure="false"
+    processIsolation="false"
+    backupGlobals="false"
+    syntaxCheck="true"
+>
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">./src</directory>
+        </whitelist>
+    </filter>
+    <log type="coverage-text" target="/home/junior/Munka/LegoW/php-packages/reconnecting-pdo/coverage.txt"/>
+</phpunit>

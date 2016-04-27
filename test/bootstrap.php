@@ -7,8 +7,5 @@
 /**
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  */
-// TODO: check include path
-//ini_set('include_path', ini_get('include_path'));
-
-// put your code here
-?>
+include __DIR__.'/../src/ReconnectingPDO.php';
+include __DIR__.'/../src/ReconnectingPDOStatement.php';
