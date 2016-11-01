@@ -2,9 +2,13 @@
 
 namespace Legow\ReconnectingPDO;
 
+use PDO;
+
 /**
  * It covers the PDO database handler to prevent connection loss caused by non-critical
  * error (ie. the MySQL has gone away).
+ * 
+ * The default error handling is set to Exception instead \PDO::ERRMODE_SILENT.
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  * @method PDOStatement|bool prepare(string $statement, array $driver_options = 'array()' [optional]) Prepares a statement for execution and returns a statement object
@@ -26,7 +30,7 @@ class ReconnectingPDO
 {
 
     /**
-     * @var \PDO
+     * @var PDO
      */
     protected $db;
 
@@ -63,7 +67,7 @@ class ReconnectingPDO
 
     /**
      * (PHP 5 &gt;= 5.1.0, PECL pdo &gt;= 0.1.0)<br/>
-     * Creates a PDO instance representing a connection to a database
+     * Creates a ReconnectingPDO instance representing a connection to a database
      * @link http://php.net/manual/en/pdo.construct.php
      * @param $dsn
      * @param $username [optional]
@@ -71,14 +75,17 @@ class ReconnectingPDO
      * @param $options [optional]
      * @param $maxRetry [optional]
      */
-    public function __construct($dsn, $username = null, $passwd = null, $options = null, $maxRetry = 5)
+    public function __construct($dsn = null, $username = null, $passwd = null,
+            $options = null, $maxRetry = 5)
     {
         $this->dsn = $dsn;
         $this->username = $username;
         $this->passwd = $passwd;
         $this->options = $options;
         $this->maxReconnection = $maxRetry;
-        $this->connectDb();
+        if ($this->dsn) {
+            $this->connectDb();
+        }
         $this->resetCounter();
     }
 
@@ -95,6 +102,9 @@ class ReconnectingPDO
      */
     protected function call($method, $arguments)
     {
+        if (!($this->db instanceof PDO)) {
+            throw new ReconnectingPDOException('No PDO connection is set');
+        }
         try {
             return call_user_func_array([$this->db, $method], $arguments);
         } catch (\PDOException $ex) {
@@ -107,7 +117,8 @@ class ReconnectingPDO
                 $this->resetCounter();
                 return $returnValue;
             } else {
-                throw $ex;
+                throw new ExceededMaxReconnectionException('ReconnectingPDO has exceeded max reconnection limit',
+                $ex->getCode(), $ex);
             }
         }
     }
@@ -121,7 +132,9 @@ class ReconnectingPDO
 
     protected function connectDb()
     {
-        $this->db = new \PDO($this->dsn, $this->username, $this->passwd, $this->options);
+        $this->db = new PDO($this->dsn, $this->username, $this->passwd,
+                $this->options);
+        $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
 
     /**
@@ -139,6 +152,42 @@ class ReconnectingPDO
     public function setMaxReconnection($max)
     {
         $this->maxReconnection = $max;
+    }
+    
+    /**
+     * 
+     * Parameters can be <b>(string)dsn</b>, <b>(string)username</b>,
+     * (string)<b>passwd</b> and <b>(array)options</b>
+     * 
+     * @param array $parameters
+     * @param bool $autoconnect
+     */
+    public function setConnectionParameters($parameters, $autoconnect = false)
+    {
+        foreach ($parameters as $key => $param) {
+            if (property_exists($this, $key)) {
+                $this->$key = $param;
+            }
+        }
+        if($autoconnect) {
+            $this->connectDb();
+        }
+    }
+
+    public function setPDO(PDO $pdoObject)
+    {
+        if (!$this->connectionParametersAreSet()) {
+            throw new ConnectionParametersMissingException();
+        }
+        $this->db = $pdoObject;
+    }
+
+    protected function connectionParametersAreSet()
+    {
+        if ($this->dsn !== null && $this->username !== null && $this->passwd !== null) {
+            return true;
+        }
+        return false;
     }
 
 }
