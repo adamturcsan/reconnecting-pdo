@@ -54,6 +54,7 @@ class ReconnectingPDOStatement
     public function __construct(PDOStatement $statement, PDO $connection, $maxRetry = 5)
     {
         $this->statement = $statement;
+        $this->queryString = $statement->queryString;
         $this->connection = $connection;
         $this->maxReconnection = $maxRetry;
     }
@@ -61,7 +62,7 @@ class ReconnectingPDOStatement
     public function __call($method, $arguments)
     {
         if(substr($method, 0, 4) == "bind") {
-            $this->seedData[$method] = $arguments; 
+            $this->seedData[$method][array_shift($ärguments)] = $arguments; 
         }
         return $this->call($method, $arguments); // Avoid direct calling of magic method
     }
@@ -94,8 +95,11 @@ class ReconnectingPDOStatement
     protected function recreateStatement() {
         $statement = $this->connection->prepare($this->queryString);
         if(!empty($this->seedData)) {
-            foreach($this->seedData as $key => $value) {
-                $statement->$key($value);
+            foreach($this->seedData as $key => $valueData) {
+                /* @var $$key string stores bind method (bindValue or bindParam) */
+                /* @var $valueData array stores a value and a paramtype */
+                list($value, $paramType) = $valueData;
+                $statement->$key($value, $paramType);
             }
         }
         $this->statement = $statement;

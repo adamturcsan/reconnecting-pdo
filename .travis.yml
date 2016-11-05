@@ -1,0 +1,19 @@
+sudo: false
+
+language: php
+
+php:
+    - '5.5'
+    
+before_install:
+    - composer self-update
+    
+install:
+    - travis_retry composer install --no-interaction --ignore-platform-reqs
+ 
+script:
+    - ./vendor/bin/phpunit --configuration phpunit.xml.dist test
+
+after_script:
+    - composer require --dev satooshi/php-coveralls:^1.0
+    - ./vendor/bin/coveralls
