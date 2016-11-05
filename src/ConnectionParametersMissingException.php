@@ -4,8 +4,6 @@
  * All rights reserved © 2016 Legow Hosting Kft.
  */
 
-declare (strict_types = 1);
-
 namespace Legow\ReconnectingPDO;
 
 /**
