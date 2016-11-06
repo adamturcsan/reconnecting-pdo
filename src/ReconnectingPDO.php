@@ -128,7 +128,7 @@ class ReconnectingPDO
             }
         }
         if($returnValue instanceof \PDOStatement) {
-            return new ReconnectingPDOStatement($returnValue, $this->db, $this->maxReconnection);
+            return new ReconnectingPDOStatement($returnValue, $this, $this->maxReconnection);
         }
         return $returnValue;
     }

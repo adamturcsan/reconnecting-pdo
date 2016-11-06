@@ -124,6 +124,10 @@ class ReconnectingPDOTest extends TestCase
         $this->assertInstanceOf(ExceededMaxReconnectionException::class, $exception);
     }
     
+    /**
+     * @expectedException \PDOException
+     * @expectedExceptionMessage Test exception
+     */
     public function testExceptionThrowUp()
     {
         $mockPDO = $this->createMock(\PDO::class);
@@ -133,31 +137,20 @@ class ReconnectingPDOTest extends TestCase
         
         $rpdo = new ReconnectingPDO('sqlite::memory:', '', '');
         $rpdo->setPDO($mockPDO);
-        
-        $exception = null;
-        try {
-            $rpdo->prepare('SELECT 1');
-        } catch (\Exception $ex) {
-            $exception = $ex;
-        }
-        $this->assertInstanceOf(\PDOException::class, $exception);
-        $this->assertContains('Test exception', $exception->getMessage());
+        //Should throw exception
+        $rpdo->prepare('SELECT 1');
     }
     
+    /**
+     * @expectedException \Legow\ReconnectingPDO\ReconnectingPDOException
+     * @expectedExceptionMessage No PDO connection
+     */
     public function testCallProtection()
     {
         $rpdo = new ReconnectingPDO();
         
-        $exception = null;
-        try {
-            $rpdo->prepare('SELECT 1');
-        } catch (\Exception $ex) {
-            $exception = $ex;
-        }
-        $this->assertInstanceOf(ReconnectingPDOException::class, $exception);
-        $this->assertContains('No PDO connection', $exception->getMessage());
+        //Should throw exception
+        $rpdo->prepare('SELECT 1');
     }
-    
-    
 
 }
