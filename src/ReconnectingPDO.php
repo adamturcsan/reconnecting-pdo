@@ -7,7 +7,7 @@
  * @license https://opensource.org/licenses/MIT MIT License
  */
 
-namespace Legow\ReconnectingPDO;
+namespace LegoW\ReconnectingPDO;
 
 use PDO;
 
@@ -19,7 +19,7 @@ use PDO;
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  * @method PDOStatement|bool prepare(string $statement, array $driver_options = 'array()' [optional]) Prepares a statement for execution and returns a statement object
- * @method bool beginTransaction(type $paramName) Initiates a transaction
+ * @method bool beginTransaction() Initiates a transaction
  * @method bool commit() Commits a transaction
  * @method bool rollBack() Rolls back a transaction
  * @method bool inTransaction() Checks if inside a transaction
@@ -128,7 +128,7 @@ class ReconnectingPDO
             }
         }
         if($returnValue instanceof \PDOStatement) {
-            return new ReconnectingPDOStatement($returnValue, $this, $this->maxReconnection);
+            return new ReconnectingPDOStatement($returnValue, $this);
         }
         return $returnValue;
     }

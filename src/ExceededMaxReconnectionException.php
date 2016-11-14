@@ -7,7 +7,7 @@
  * @license https://opensource.org/licenses/MIT MIT License
  */
 
-namespace Legow\ReconnectingPDO;
+namespace LegoW\ReconnectingPDO;
 
 /**
  * Description of ExceededMaxReconnectionException

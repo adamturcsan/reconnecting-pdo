@@ -22,7 +22,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Legow\\ReconnectingPDO\\": "src/"
+            "LegoW\\ReconnectingPDO\\": "src/"
         }
     },
     "require-dev": {

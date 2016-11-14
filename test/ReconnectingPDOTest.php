@@ -10,10 +10,10 @@
 namespace LegoW\ReconnectingPDO\Test;
 
 use PHPUnit\Framework\TestCase;
-use Legow\ReconnectingPDO\ReconnectingPDO;
-use Legow\ReconnectingPDO\ReconnectingPDOException;
-use Legow\ReconnectingPDO\ConnectionParametersMissingException;
-use Legow\ReconnectingPDO\ExceededMaxReconnectionException;
+use LegoW\ReconnectingPDO\ReconnectingPDO;
+use LegoW\ReconnectingPDO\ReconnectingPDOException;
+use LegoW\ReconnectingPDO\ConnectionParametersMissingException;
+use LegoW\ReconnectingPDO\ExceededMaxReconnectionException;
 
 /**
  * Description of ReconnectingPDOTest
@@ -142,7 +142,7 @@ class ReconnectingPDOTest extends TestCase
     }
     
     /**
-     * @expectedException \Legow\ReconnectingPDO\ReconnectingPDOException
+     * @expectedException \LegoW\ReconnectingPDO\ReconnectingPDOException
      * @expectedExceptionMessage No PDO connection
      */
     public function testCallProtection()
