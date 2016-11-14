@@ -152,5 +152,14 @@ class ReconnectingPDOTest extends TestCase
         //Should throw exception
         $rpdo->prepare('SELECT 1');
     }
+    
+    public function testQuery()
+    {
+        $rpdo = new ReconnectingPDO('sqlite::memory:', '', '');
+        
+        $statement = $rpdo->query('SELECT 1;');
+        $this->assertInstanceOf(\LegoW\ReconnectingPDO\ReconnectingPDOStatement::class, $statement);
+        $this->assertAttributeEquals(true, 'isQuery', $statement);
+    }
 
 }

@@ -15,7 +15,9 @@ use PDOStatement;
 use PDO;
 
 /**
- * Description of ReconnectingPDOStatement
+ * Represents a prepared statement and, after the statement is executed, an
+ * associated result set.
+ * If server has gone away it can recreate itself. Use it with great caution in cases of update or insert statements
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  * @method bool execute(array $parameters = null [optional]) Executes a prepared statement
@@ -57,6 +59,11 @@ class ReconnectingPDOStatement
     protected $executed = false;
 
     /**
+     * @var bool
+     */
+    protected $isQuery = false;
+
+    /**
      * @return \PDOStatement
      */
     public function getPDOStatement()
@@ -78,11 +85,13 @@ class ReconnectingPDOStatement
      * @param ReconnectingPDO $connection
      */
     public function __construct(PDOStatement $statement,
-            ReconnectingPDO $connection, StatementCursor $cursor = null)
+            ReconnectingPDO $connection, $isQuery = false,
+            StatementCursor $cursor = null)
     {
         $this->statement = $statement;
         $this->queryString = $statement->queryString;
         $this->connection = $connection;
+        $this->isQuery = $isQuery;
         if ($cursor == null) {
             $cursor = new StatementCursor();
         }
@@ -144,6 +153,25 @@ class ReconnectingPDOStatement
 
     protected function recreateStatement()
     {
+        if ($this->isQuery) {
+            return $this->recreateQuery();
+        }
+        return $this->recreatePreparedStatement();
+    }
+
+    protected function recreateQuery()
+    {
+        //Recreate only if it is a fetchable result set and the error occured during longrun fetching
+        if ($this->cursor->getPosition()) {
+            /* @var $reconnectingStatement ReconnectingPDOStatement */
+            $reconnectingStatement = $this->connection->query($this->queryString);
+            $this->statement = $reconnectingStatement->getPDOStatement();
+            $this->searchPosition();
+        }
+    }
+
+    protected function recreatePreparedStatement()
+    {
         $shouldBeExecuted = $this->executed;
         $reconnectingstatement = $this->connection->prepare($this->queryString);
         $this->executed = false;
@@ -196,10 +224,38 @@ class ReconnectingPDOStatement
         $result = $this->call('fetch', $args);
         if (isset($this->seedData['bindColumn']) && count($this->seedData['bindColumn'])) {
             foreach ($this->seedData['bindColumn'] as $name => $column) {
-                $this->seedData['bindColumn'][$name] = $result[$name];
+                if (is_int($name)) {
+                    $keys = array_keys($result);
+                    $this->seedData['bindColumn'][$name] = $result[$keys[$name - 1]];
+                } else {
+                    $this->seedData['bindColumn'][$name] = $result[$name];
+                }
             }
         }
         return $result;
+    }
+
+    /**
+     * 
+     * @param int $fetch_style
+     * @param mixed $fetch_argumnet
+     * @param array $ctor_args
+     */
+    public function fetchAll($fetch_style = \PDO::FETCH_BOTH,
+            $fetch_argumnet = null, $ctor_args = [])
+    {
+        $args = func_get_args();
+        $result = $this->call('fetchAll', $args);
+        if (isset($this->seedData['bindColumn']) && count($this->seedData['bindColumn'])) {
+            foreach ($this->seedData['bindColumn'] as $name => $column) {
+                if (is_int($name)) {
+                    $keys = array_keys($result);
+                    $this->seedData['bindColumn'][$name] = $result[count($result) - 1][$keys[$name - 1]];
+                } else {
+                    $this->seedData['bindColumn'][$name] = $result[count($result) - 1][$name];
+                }
+            }
+        }
     }
 
 }

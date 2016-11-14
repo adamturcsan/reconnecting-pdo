@@ -10,6 +10,7 @@
 namespace LegoW\ReconnectingPDO;
 
 use PDO;
+use LegoW\ReconnectingPDO\ReconnectingPDOStatement;
 
 /**
  * It covers the PDO database handler to prevent connection loss caused by non-critical
@@ -127,8 +128,8 @@ class ReconnectingPDO
                 $ex->getCode(), $ex);
             }
         }
-        if($returnValue instanceof \PDOStatement) {
-            return new ReconnectingPDOStatement($returnValue, $this);
+        if ($returnValue instanceof \PDOStatement) {
+            return new ReconnectingPDOStatement($returnValue, $this, $method === 'query');
         }
         return $returnValue;
     }
@@ -163,7 +164,7 @@ class ReconnectingPDO
     {
         $this->maxReconnection = $max;
     }
-    
+
     /**
      * 
      * Parameters can be <b>(string)dsn</b>, <b>(string)username</b>,
@@ -179,7 +180,7 @@ class ReconnectingPDO
                 $this->$key = $param;
             }
         }
-        if($autoconnect) {
+        if ($autoconnect) {
             $this->connectDb();
         }
     }
@@ -199,5 +200,4 @@ class ReconnectingPDO
         }
         return false;
     }
-
 }
