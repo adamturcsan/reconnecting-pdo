@@ -41,7 +41,7 @@ class ReconnectingPDOStatement
     /**
      * @var string
      */
-    protected $queryString;
+    public $queryString;
 
     /**
      * @var StatementCursor
@@ -256,6 +256,7 @@ class ReconnectingPDOStatement
                 }
             }
         }
+        return $result;
     }
 
 }
