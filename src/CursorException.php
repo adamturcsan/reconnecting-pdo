@@ -10,11 +10,11 @@
 namespace LegoW\ReconnectingPDO;
 
 /**
- * Description of ConnectionParametersMissingException
+ * Description of CursorException
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  */
-class ConnectionParametersMissingException extends ReconnectingPDOException
+class CursorException extends \Exception
 {
     //put your code here
 }

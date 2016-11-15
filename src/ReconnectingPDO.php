@@ -1,8 +1,16 @@
 <?php
 
-namespace Legow\ReconnectingPDO;
+/*
+ * LegoW\ReconnectingPDO (https://github.com/adamturcsan/reconnecting-pdo)
+ * 
+ * @copyright Copyright (c) 2014-2016 Legow Hosting Kft. (http://www.legow.hu)
+ * @license https://opensource.org/licenses/MIT MIT License
+ */
+
+namespace LegoW\ReconnectingPDO;
 
 use PDO;
+use LegoW\ReconnectingPDO\ReconnectingPDOStatement;
 
 /**
  * It covers the PDO database handler to prevent connection loss caused by non-critical
@@ -12,7 +20,7 @@ use PDO;
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  * @method PDOStatement|bool prepare(string $statement, array $driver_options = 'array()' [optional]) Prepares a statement for execution and returns a statement object
- * @method bool beginTransaction(type $paramName) Initiates a transaction
+ * @method bool beginTransaction() Initiates a transaction
  * @method bool commit() Commits a transaction
  * @method bool rollBack() Rolls back a transaction
  * @method bool inTransaction() Checks if inside a transaction
@@ -106,7 +114,7 @@ class ReconnectingPDO
             throw new ReconnectingPDOException('No PDO connection is set');
         }
         try {
-            return call_user_func_array([$this->db, $method], $arguments);
+            $returnValue = call_user_func_array([$this->db, $method], $arguments);
         } catch (\PDOException $ex) {
             if (!stristr($ex->getMessage(), "server has gone away") || $ex->getCode() != 'HY000') {
                 throw $ex;
@@ -115,12 +123,15 @@ class ReconnectingPDO
                 $this->reconnectDb();
                 $returnValue = $this->call($method, $arguments); // Retry
                 $this->resetCounter();
-                return $returnValue;
             } else {
                 throw new ExceededMaxReconnectionException('ReconnectingPDO has exceeded max reconnection limit',
                 $ex->getCode(), $ex);
             }
         }
+        if ($returnValue instanceof \PDOStatement) {
+            return new ReconnectingPDOStatement($returnValue, $this, $method === 'query');
+        }
+        return $returnValue;
     }
 
     protected function reconnectDb()
@@ -153,7 +164,7 @@ class ReconnectingPDO
     {
         $this->maxReconnection = $max;
     }
-    
+
     /**
      * 
      * Parameters can be <b>(string)dsn</b>, <b>(string)username</b>,
@@ -169,7 +180,7 @@ class ReconnectingPDO
                 $this->$key = $param;
             }
         }
-        if($autoconnect) {
+        if ($autoconnect) {
             $this->connectDb();
         }
     }
@@ -189,5 +200,4 @@ class ReconnectingPDO
         }
         return false;
     }
-
 }
