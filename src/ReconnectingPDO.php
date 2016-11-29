@@ -40,7 +40,7 @@ class ReconnectingPDO
     /**
      * @var PDO
      */
-    protected $db;
+    protected $connection;
 
     /**
      * @var string DSN
@@ -110,42 +110,44 @@ class ReconnectingPDO
      */
     protected function call($method, $arguments)
     {
-        if (!($this->db instanceof PDO)) {
+        if (!($this->connection instanceof PDO)) {
             throw new ReconnectingPDOException('No PDO connection is set');
         }
         try {
-            $returnValue = call_user_func_array([$this->db, $method], $arguments);
+            $returnValue = call_user_func_array([$this->connection, $method],
+                    $arguments);
         } catch (\PDOException $ex) {
             if (!stristr($ex->getMessage(), "server has gone away") || $ex->getCode() != 'HY000') {
                 throw $ex;
             }
-            if ($this->reconnectCounter < $this->maxReconnection) {
-                $this->reconnectDb();
-                $returnValue = $this->call($method, $arguments); // Retry
-                $this->resetCounter();
-            } else {
+            if ($this->reconnectCounter >= $this->maxReconnection) {
                 throw new ExceededMaxReconnectionException('ReconnectingPDO has exceeded max reconnection limit',
                 $ex->getCode(), $ex);
             }
+            $this->reconnectDb();
+            $returnValue = $this->call($method, $arguments); // Retry
+            $this->resetCounter();
         }
         if ($returnValue instanceof \PDOStatement) {
-            return new ReconnectingPDOStatement($returnValue, $this, $method === 'query');
+            return new ReconnectingPDOStatement($returnValue, $this,
+                    $method === 'query');
         }
         return $returnValue;
     }
 
     protected function reconnectDb()
     {
-        unset($this->db);
+        unset($this->connection);
         $this->connectDb();
         $this->reconnectCounter++;
     }
 
     protected function connectDb()
     {
-        $this->db = new PDO($this->dsn, $this->username, $this->passwd,
+        $this->connection = new PDO($this->dsn, $this->username, $this->passwd,
                 $this->options);
-        $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->connection->setAttribute(PDO::ATTR_ERRMODE,
+                PDO::ERRMODE_EXCEPTION);
     }
 
     /**
@@ -173,15 +175,12 @@ class ReconnectingPDO
      * @param array $parameters
      * @param bool $autoconnect
      */
-    public function setConnectionParameters($parameters, $autoconnect = false)
+    public function setConnectionParameters($parameters)
     {
         foreach ($parameters as $key => $param) {
             if (property_exists($this, $key)) {
                 $this->$key = $param;
             }
-        }
-        if ($autoconnect) {
-            $this->connectDb();
         }
     }
 
@@ -190,7 +189,7 @@ class ReconnectingPDO
         if (!$this->connectionParametersAreSet()) {
             throw new ConnectionParametersMissingException();
         }
-        $this->db = $pdoObject;
+        $this->connection = $pdoObject;
     }
 
     protected function connectionParametersAreSet()
@@ -200,4 +199,5 @@ class ReconnectingPDO
         }
         return false;
     }
+
 }
