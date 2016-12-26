@@ -11,6 +11,7 @@ namespace LegoW\ReconnectingPDO;
 
 use PDO;
 use LegoW\ReconnectingPDO\ReconnectingPDOStatement;
+use LegoW\ReconnectingPDO\ReconnectingPDOException;
 
 /**
  * It covers the PDO database handler to prevent connection loss caused by non-critical
@@ -114,6 +115,7 @@ class ReconnectingPDO
             throw new ReconnectingPDOException('No PDO connection is set');
         }
         try {
+            $this->connection->query('SELECT 1');
             $returnValue = call_user_func_array([$this->connection, $method],
                     $arguments);
         } catch (\PDOException $ex) {
