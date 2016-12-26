@@ -12,7 +12,6 @@ namespace LegoW\ReconnectingPDO\Test;
 use PHPUnit\Framework\TestCase;
 use LegoW\ReconnectingPDO\ReconnectingPDO;
 use LegoW\ReconnectingPDO\ReconnectingPDOStatement;
-use LegoW\ReconnectingPDO\ReconnectingPDOException;
 use LegoW\ReconnectingPDO\ConnectionParametersMissingException;
 use LegoW\ReconnectingPDO\ExceededMaxReconnectionException;
 
@@ -37,9 +36,9 @@ class ReconnectingPDOTest extends TestCase
         $this->assertAttributeEquals('test', 'passwd', $rpdo);
         $this->assertAttributeEquals([], 'options', $rpdo);
         $this->assertAttributeEquals(3, 'maxReconnection', $rpdo);
-        $this->assertAttributeInstanceOf(\PDO::class, 'db', $rpdo);
+        $this->assertAttributeInstanceOf(\PDO::class, 'connection', $rpdo);
     }
-
+    
     public function testSetters()
     {
         $dsn = 'sqlite::memory:';
@@ -73,15 +72,6 @@ class ReconnectingPDOTest extends TestCase
         }
         $this->assertNull($exception);
 
-        unset($rpdo);
-        $rpdo = new ReconnectingPDO();
-        $rpdo->setConnectionParameters([
-            'dsn' => $dsn,
-            'passwd' => $passwd,
-            'username' => $username
-                ], true);
-
-        $this->assertAttributeInstanceOf(\PDO::class, 'db', $rpdo);
     }
 
     public function testReconnection()
@@ -100,7 +90,7 @@ class ReconnectingPDOTest extends TestCase
         $rpdo = new ReconnectingPDO($dsn, $username, $passwd);
         $rpdo->setPDO($mockPDO);
 
-        $this->assertAttributeEquals($mockPDO, 'db', $rpdo);
+        $this->assertAttributeEquals($mockPDO, 'connection', $rpdo);
 
         $exception = null;
         try {
@@ -151,7 +141,7 @@ class ReconnectingPDOTest extends TestCase
         $rpdo = new ReconnectingPDO();
 
         //Should throw exception
-        $rpdo->prepare('SELECT 1');
+        $rpdo->query('SELECT 1');
     }
 
     public function testQuery()
