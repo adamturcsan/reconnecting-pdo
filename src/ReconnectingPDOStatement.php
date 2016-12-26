@@ -126,7 +126,10 @@ class ReconnectingPDOStatement
             switch ($method) {
                 //Differenct method handlers
                 case 'bindParam':
-                    return $this->statement->bindParam(...$arguments);
+                    for($i=0; $i<5; $i++) {
+                        ${'a'.$i} = &$arguments[$i];
+                    }
+                    return $this->statement->bindParam($a0, $a1, $a2, $a3, $a4);
                 //Pre-call 
                 case 'fetch':
                 case 'fetchAll':
