@@ -115,7 +115,7 @@ class ReconnectingPDO
             throw new ReconnectingPDOException('No PDO connection is set');
         }
         try {
-            $this->connection->query('SELECT 1');
+            $this->ping($method);
             $returnValue = call_user_func_array([$this->connection, $method],
                     $arguments);
         } catch (\PDOException $ex) {
@@ -200,6 +200,22 @@ class ReconnectingPDO
             return true;
         }
         return false;
+    }
+
+    /**
+     * 
+     * @param string $methodName
+     */
+    protected function ping($methodName)
+    {
+        switch ($methodName) {
+            case 'lastInsertId':
+                //noop
+                break;
+            default:
+                $this->connection->query('SELECT 1');
+                break;
+        }
     }
 
 }
