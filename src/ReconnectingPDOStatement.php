@@ -20,10 +20,22 @@ use PDO;
  * If server has gone away it can recreate itself. Use it with great caution in cases of update or insert statements
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
- * @method bool execute(array $parameters = null [optional]) Executes a prepared statement
- * @method bool bindParam(mixed $parameter, mixed &$variable, int $dataType = PDO::PARAM_STR [optional], int $length = null [optional], $driver_options = null [optional]) Binds a parameter to the specified variable name
- * @method bool bindValue(mixed $parameter, mixed $value, int $data_type = PDO::PARAM_STR [optional]) Binds a value to a parameter
+ * @method bool bindParam(mixed $parameter, mixed &$variable, int $dataType = PDO::PARAM_STR, int $length = null, $driver_options = null) Binds a parameter to the specified variable name
+ * @method bool bindValue(mixed $parameter, mixed $value, int $data_type = PDO::PARAM_STR) Binds a value to a parameter
+ * @method bool closeCursor() Closes the cursor, enabling the statement to be executed again.
+ * @method int columnCount() Returns the number of columns in the result set
+ * @method void debugDumpParams() Dump an SQL prepared command
+ * @method string errorCode() Fetch the SQLSTATE associated with the last operation on the statement handle
+ * @method array errorInfo() Fetch extended error information associated with the last operation on the statement handle
+ * @method bool execute(array $parameters = null) Executes a prepared statement
+ * @method mixed fetchColumn(int $column_number = 0) Returns a single column from the next row of a result set
+ * @method mixed fetchObject(string $class_name = "stdClass", array $ctor_args = null) Fetches the next row and returns it as an object
+ * @method mixed getAttribute(int $attribute) Retrieve a statement attribute
+ * @method array getColumnMeta(int $column) Returns metadata for a column in a result set
+ * @method bool nextRowset() Advances to the next rowset in a multi-rowset statement handle
  * @method int rowCount() Returns the number of rows affected by the last SQL statement
+ * @method bool setAttribute ( int $attribute , mixed $value ) Set a statement attribute
+ * @method bool setFetchMode ( int $mode [PDO::FETCH_* constants] ) Set the default fetch mode for this statement<br /><br />If $mode = PDO::FETCH_COLUMN, second argument: <b>int $colnum</b><br />If $mode = PDO::FETCH_CLASS, further arguments: <b>string $classname, array $ctorargs</b><br />If $mode = PDO::FETCH_INTO, second argument: <b>object $object</b>
  */
 class ReconnectingPDOStatement
 {
@@ -126,16 +138,15 @@ class ReconnectingPDOStatement
             switch ($method) {
                 //Differenct method handlers
                 case 'bindParam':
-                    for($i=0; $i<5; $i++) {
-                        ${'a'.$i} = &$arguments[$i];
+                    for ($i = 0; $i < 5; $i++) {
+                        ${'a' . $i} = &$arguments[$i];
                     }
                     return $this->statement->bindParam($a0, $a1, $a2, $a3, $a4);
                 //Pre-call 
                 case 'fetch':
-                case 'fetchAll':
                 case 'fetchColumn':
                 case 'fetchObject':
-                    $this->trackCursor($method);
+                    $this->trackCursor();
                     break;
                 case 'execute':
                     $this->executed = true;
@@ -212,6 +223,28 @@ class ReconnectingPDOStatement
         $this->cursor->setPosition($position);
     }
 
+    /**
+     * 
+     * @param int $steps
+     */
+    protected function forwardCursor($steps)
+    {
+        $position = $this->cursor->getPosition() + $steps;
+        while ($this->cursor->next()->getPosition() < $position) {
+            //Nothin to do here.
+        }
+    }
+
+    /**
+     * Bind a column to a PHP variable
+     * 
+     * @param mixed $column
+     * @param mixed $param
+     * @param int $type [optional]
+     * @param int $maxlen [optional]
+     * @param mixed $driverdata [optional]
+     * @return bool
+     */
     public function bindColumn($column, &$param, $type = null, $maxlen = null,
             $driverdata = null)
     {
@@ -220,6 +253,14 @@ class ReconnectingPDOStatement
                         $driverdata);
     }
 
+    /**
+     * Fetches the next row from a result set 
+     * 
+     * @param int $fetchType [optional]
+     * @param int $cursor_orientation = PDO::FETCH_ORI_NEXT
+     * @param int $cursor_offset = 0
+     * @return mixed
+     */
     public function fetch($fetchType = null,
             $cursor_orientation = PDO::FETCH_ORI_NEXT, $cursor_offset = 0)
     {
@@ -239,18 +280,19 @@ class ReconnectingPDOStatement
     }
 
     /**
+     * Returns an array containing all of the result set rows 
      * 
-     * @param int $fetch_style
-     * @param mixed $fetch_argumnet
-     * @param array $ctor_args
+     * @param int $fetch_style = \PDO::FETCH_BOTH
+     * @param mixed $fetch_argument [optional]
+     * @param array $ctor_args = []
      */
     public function fetchAll($fetch_style = \PDO::FETCH_BOTH,
-            $fetch_argumnet = null, $ctor_args = [])
+            $fetch_argument = null, $ctor_args = [])
     {
         $args = func_get_args();
         $result = $this->call('fetchAll', $args);
         if (isset($this->seedData['bindColumn']) && count($this->seedData['bindColumn'])) {
-            foreach ($this->seedData['bindColumn'] as $name => $column) {
+            foreach (array_keys($this->seedData['bindColumn']) as $name) {
                 if (is_int($name)) {
                     $keys = array_keys($result);
                     $this->seedData['bindColumn'][$name] = $result[count($result) - 1][$keys[$name - 1]];
@@ -258,6 +300,9 @@ class ReconnectingPDOStatement
                     $this->seedData['bindColumn'][$name] = $result[count($result) - 1][$name];
                 }
             }
+        }
+        if (is_array($result)) {
+            $this->forwardCursor(count($result));
         }
         return $result;
     }
