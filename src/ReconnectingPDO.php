@@ -33,7 +33,6 @@ use LegoW\ReconnectingPDO\ReconnectingPDOException;
  * @method array errorInfo() Fetch extended error information associated with the last operation on the database handle
  * @method mixed getAttribute(int $attribute One of the PDO::ATTR_* constants.) Retrieve a database connection attribute
  * @method string quote(string $string The string to be quoted, int $parameter_type = 'PDO::PARAM_STR') Quotes a string for use in a query.
- * @method array getAvailableDrivers() Return an array of available PDO drivers
  */
 class ReconnectingPDO
 {
@@ -73,6 +72,18 @@ class ReconnectingPDO
      * @var int Maximum reconnection for one function call
      */
     protected $maxReconnection;
+
+    /**
+     * (PHP 5 &gt;= 5.1.3, PHP 7, PECL pdo &gt;= 1.0.3)<br/>
+     * Return an array of available PDO drivers
+     * @link http://php.net/manual/en/pdo.getavailabledrivers.php
+     * @return array <b>PDO::getAvailableDrivers</b> returns an array of PDO driver names. If
+     * no drivers are available, it returns an empty array.
+     */
+    public static function getAvailableDrivers()
+    {
+        return \PDO::getAvailableDrivers();
+    }
 
     /**
      * (PHP 5 &gt;= 5.1.0, PECL pdo &gt;= 0.1.0)<br/>

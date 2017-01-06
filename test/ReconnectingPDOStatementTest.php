@@ -14,6 +14,7 @@ use PDO;
 use PDOStatement;
 use LegoW\ReconnectingPDO\ReconnectingPDO;
 use LegoW\ReconnectingPDO\ReconnectingPDOStatement;
+use LegoW\ReconnectingPDO\Test\Mock\FetchObjectTestClass;
 
 /**
  * Description of ReconnectingPDOStatementTest
@@ -22,6 +23,11 @@ use LegoW\ReconnectingPDO\ReconnectingPDOStatement;
  */
 class ReconnectingPDOStatementTest extends TestCase
 {
+
+    /**
+     * @var string
+     */
+    protected $testDSN = 'sqlite::memory:';
 
     /**
      * @var \PDO
@@ -43,11 +49,6 @@ class ReconnectingPDOStatementTest extends TestCase
         }
         $this->commonTestDB = $pdo;
     }
-
-    /**
-     * @var string
-     */
-    protected $testDSN = 'sqlite::memory:';
 
     public function testConstruct()
     {
@@ -81,12 +82,16 @@ class ReconnectingPDOStatementTest extends TestCase
         $pdo = new ReconnectingPDO($this->testDSN);
         $rstm = $pdo->prepare('SELECT :param, :value, 1 as column;');
         $param = 'test';
-        $rstm->bindValue('value', 'value', PDO::PARAM_STR);
         $rstm->bindParam('param', $param, PDO::PARAM_STR);
+        $rstm->bindValue('value', 'value', PDO::PARAM_STR);
 
         $this->assertTrue($rstm->execute());
         $this->assertEquals([$param, 'value', 1], $rstm->fetch(PDO::FETCH_NUM));
+    }
 
+    public function testBindColumn()
+    {
+        $pdo = new ReconnectingPDO($this->testDSN);
         $value = $id = null;
         $statement = $pdo->prepare('SELECT 11, "valuevalue" as value;');
         $statement->execute();
@@ -102,6 +107,10 @@ class ReconnectingPDOStatementTest extends TestCase
         $seedData = $prop->getValue($statement);
         $this->assertEquals('valuevalue', $value);
         $this->assertEquals(11, $id);
+    }
+
+    public function testBindColumnWithFetchAll()
+    {
 
         $newPDO = new ReconnectingPDO('', '', '');
         $newPDO->setPDO($this->commonTestDB);
@@ -112,9 +121,10 @@ class ReconnectingPDOStatementTest extends TestCase
 
         $stm->execute();
         $stm->fetchAll();
+        $lastIndex = (count($this->testDBData) - 1);
 
-        $this->assertEquals($this->testDBData[2]['id'], $newId);
-        $this->assertEquals($this->testDBData[2]['name'], $newValue);
+        $this->assertEquals($this->testDBData[$lastIndex]['id'], $newId);
+        $this->assertEquals($this->testDBData[$lastIndex]['name'], $newValue);
     }
 
     public function testGetPDOStatement()
@@ -251,6 +261,158 @@ class ReconnectingPDOStatementTest extends TestCase
         $this->assertEquals($this->testDBData[0], $sut->fetch(\PDO::FETCH_ASSOC));
         // testStatement throws exception for second call, so statement recreation is triggered
         $this->assertEquals($this->testDBData[1], $sut->fetch(\PDO::FETCH_ASSOC));
+    }
+
+    public function testCursorAfterFetchAll()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        /* @var $stm ReconnectingPDOStatement */
+        $stm = $rpdo->query('SELECT * FROM test');
+        $result = $stm->fetchAll();
+        $stmCursor = new \LegoW\ReconnectingPDO\StatementCursor();
+        $stmCursor->setPosition(count($result));
+
+        $this->assertAttributeEquals($stmCursor, 'cursor', $stm);
+    }
+
+    public function testCloseCursor()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        /* @var $stm ReconnectingPDOStatement */
+        $stm = $rpdo->prepare('SELECT * FROM test');
+
+        $stm->execute();
+        $this->assertEquals($stm->fetch(\PDO::FETCH_ASSOC), $this->testDBData[0]);
+        $stm->closeCursor();
+        $this->assertFalse($stm->fetch(\PDO::FETCH_ASSOC));
+        //Reexecuting starts everything over
+        $stm->execute();
+        $this->assertEquals($stm->fetch(\PDO::FETCH_ASSOC), $this->testDBData[0]);
+    }
+
+    public function testColumnCount()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        $stm = $rpdo->prepare('SELECT * FROM test');
+
+        $this->assertSame(0, $stm->columnCount());
+        $stm->execute();
+        $this->assertSame(3, $stm->columnCount());
+    }
+
+    public function testDebugDumpParams()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        $query = 'SELECT * FROM test';
+        /* @var $stm ReconnectingPDOStatement */
+        $stm = $rpdo->prepare($query);
+
+        $debugParams = 'SQL: [' . strlen($query) . '] ' . $query . "\nParams:  0\n";
+
+        ob_start();
+        $stm->debugDumpParams();
+        $output = ob_get_contents();
+        ob_end_clean();
+        $this->assertSame($debugParams, $output);
+    }
+
+    public function testErrorCode()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        $stm = $rpdo->prepare('SELECT * FROM test');
+        $stm->execute();
+        $this->assertSame('00000', $stm->errorCode());
+    }
+
+    public function testErrorInfo()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        $stm = $rpdo->prepare('SELECT * FROM test');
+        $stm->execute();
+        $emptyErrorInfo = [
+            '00000',
+            null,
+            null
+        ];
+        $this->assertSame($emptyErrorInfo, $stm->errorInfo());
+    }
+
+    public function testFetchColumn()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        $stm = $rpdo->prepare('SELECT * FROM test');
+        $stm->execute();
+
+        $this->assertEquals($this->testDBData[0]['name'], $stm->fetchColumn(1));
+        $this->assertEquals($this->testDBData[1]['id'], $stm->fetchColumn());
+    }
+
+    public function testFetchObject()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        $stm = $rpdo->prepare('SELECT * FROM test');
+        $stm->execute();
+        $testObject = new FetchObjectTestClass();
+        $testObject->id = 1;
+        $testObject->name = 'név';
+        $testObject->value = 'érték';
+        $this->assertEquals($testObject,
+                $stm->fetchObject(FetchObjectTestClass::class));
+        $this->assertInstanceOf(get_class($testObject),
+                $stm->fetchObject(FetchObjectTestClass::class));
+    }
+
+    public function testGetColumnMeta()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        $stm = $rpdo->prepare('SELECT id FROM test');
+        $this->assertFalse($stm->getColumnMeta(0));
+        $stm->execute();
+        $this->assertArraySubset(['name' => 'id', 'table' => 'test', 'native_type' => 'integer'],
+                $stm->getColumnMeta(0));
+    }
+
+    public function testRowCount()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+        $rpdo->beginTransaction();
+        $stm = $rpdo->prepare('DELETE FROM test');
+        $this->assertSame(0, $stm->rowCount());
+        $stm->execute();
+        $this->assertSame(count($this->testDBData), $stm->rowCount());
+        $rpdo->rollBack();
+    }
+
+    public function testSetFetchMode()
+    {
+        $rpdo = new ReconnectingPDO($this->testDSN, '', '');
+        $rpdo->setPDO($this->commonTestDB);
+
+        $stm = $rpdo->prepare('SELECT * FROM test');
+        $stm->setFetchMode(\PDO::FETCH_ASSOC);
+        $stm->execute();
+        $this->assertEquals($this->testDBData[0], $stm->fetch());
+        $stm->setFetchMode(\PDO::FETCH_NUM);
+        $this->assertEquals(array_values($this->testDBData[1]), $stm->fetch());
     }
 
 }

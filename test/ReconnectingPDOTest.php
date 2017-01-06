@@ -38,7 +38,7 @@ class ReconnectingPDOTest extends TestCase
         $this->assertAttributeEquals(3, 'maxReconnection', $rpdo);
         $this->assertAttributeInstanceOf(\PDO::class, 'connection', $rpdo);
     }
-    
+
     public function testSetters()
     {
         $dsn = 'sqlite::memory:';
@@ -71,7 +71,6 @@ class ReconnectingPDOTest extends TestCase
             $exception = $ex;
         }
         $this->assertNull($exception);
-
     }
 
     public function testReconnection()
@@ -202,6 +201,35 @@ class ReconnectingPDOTest extends TestCase
         $rpdo->exec('SELECT * FROM test');
     }
 
+    public function testTransactionCommit()
+    {
+        $rpdo = new ReconnectingPDO('sqlite::memory:');
+
+        $rpdo->beginTransaction();
+        $rpdo->exec('CREATE TABLE test (id int(2), name varchar(64), value varchar(255))');
+        $rpdo->exec('INSERT INTO test VALUES (1, "testName", "testValue")');
+        $this->assertSame(1, $rpdo->exec('SELECT * FROM test'));
+        $rpdo->commit();
+        $this->assertSame(1, $rpdo->exec('SELECT * FROM test'));
+    }
+
+    public function testErrorCode()
+    {
+        $rpdo = new ReconnectingPDO('sqlite::memory:');
+        $this->assertSame('00000', $rpdo->errorCode());
+    }
+
+    public function testErrorInfo()
+    {
+        $emptyErrorInfo = [
+            '00000',
+            null,
+            null
+        ];
+        $rpdo = new ReconnectingPDO('sqlite::memory:');
+        $this->assertSame($emptyErrorInfo, $rpdo->errorInfo());
+    }
+
     public function testLastInsertId()
     {
         $rpdo = new ReconnectingPDO('sqlite::memory:');
@@ -213,4 +241,26 @@ class ReconnectingPDOTest extends TestCase
         $this->assertEquals(2, $rpdo->lastInsertId());
     }
 
+    public function testGetAndSetAttribute()
+    {
+        $rpdo = new ReconnectingPDO('sqlite::memory:');
+
+        $this->assertSame(\PDO::ERRMODE_EXCEPTION, $rpdo->getAttribute(\PDO::ATTR_ERRMODE));
+        $rpdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_WARNING);
+        $this->assertSame(\PDO::ERRMODE_WARNING, $rpdo->getAttribute(\PDO::ATTR_ERRMODE));
+    }
+    
+    public function testGetAvailableDrivers()
+    {
+        $this->assertTrue(is_array(ReconnectingPDO::getAvailableDrivers()));
+    }
+    
+    public function testInTransaction()
+    {
+        $rpdo = new ReconnectingPDO('sqlite::memory:');
+        
+        $this->assertFalse($rpdo->inTransaction());
+        $rpdo->beginTransaction();
+        $this->assertTrue($rpdo->inTransaction());
+    }
 }
