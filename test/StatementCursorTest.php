@@ -9,15 +9,14 @@
 
 namespace LegoW\ReconnectingPDO\Test;
 
-use PHPUnit\Framework\TestCase;
 use LegoW\ReconnectingPDO\StatementCursor;
-use LegoW\ReconnectingPDO\CursorException;
+
 /**
  * Description of StatementCursorTest
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  */
-class StatementCursorTest extends TestCase
+class StatementCursorTest extends \PHPUnit_Framework_TestCase
 {
     
     public function testGetPosition()
