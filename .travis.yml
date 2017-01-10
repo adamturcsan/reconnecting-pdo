@@ -60,4 +60,4 @@ script:
     - ./vendor/bin/phpunit --configuration phpunit.xml.dist test
 
 after_script:
-    - if [[ $TEST_COVERAGE == 'true' ]]; ./vendor/bin/coveralls ; fi
+    - if [[ $TEST_COVERAGE == 'true' ]]; then ./vendor/bin/coveralls ; fi
