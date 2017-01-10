@@ -2,18 +2,62 @@ sudo: false
 
 language: php
 
-php:
-    - 5.6
+env:
+    global:
+        - COMPOSER_ARGS="--no-interaction --ignore-platform-reqs"
+
+matrix:
+    include:
+        - php: 5.5
+          env:
+              - DEPS=lowest
+        - php: 5.5
+          env:
+              - DEPS=locked
+        - php: 5.5
+          env:
+              - DEPS=latest
+        - php: 5.6
+          env:
+              - DEPS=lowest
+        - php: 5.6
+          env:
+              - DEPS=locked
+              - TEST_COVERAGE=true
+        - php: 5.6
+          env:
+              - DEPS=latest
+        - php: 7.0
+          env:
+              - DEPS=lowest
+        - php: 7.0
+          env:
+              - DEPS=locked
+        - php: 7.0
+          env:
+              - DEPS=latest
+        - php: 7.1
+          env:
+              - DEPS=lowest
+        - php: 7.1
+          env:
+              - DEPS=locked
+        - php: 7.1
+          env:
+              - DEPS=latest
     
 before_install:
+    - if [[ $TEST_COVERAGE != 'true' ]]; then phpenv config-rm xdebug.ini || return 0; fi
     - composer self-update
     
 install:
-    - travis_retry composer install --no-interaction --ignore-platform-reqs
+    - if [[ $DEPS == 'lowest' ]]; then travis_retry composer update --prefer-lowest --prefer-stable $COMPOSER_ARGS ; fi
+    - if [[ $DEPS == 'latest' ]]; then travis_retry composer update --prefer-stable $COMPOSER_ARGS ; fi
+    - if [[ $TEST_COVERAGE == 'true' ]]; then composer require --dev $COMPOSER_ARGS satooshi/php-coveralls:^1.0 ; fi
+    - travis_retry composer install $COMPOSER_ARGS
  
 script:
     - ./vendor/bin/phpunit --configuration phpunit.xml.dist test
 
 after_script:
-    - composer require --dev satooshi/php-coveralls:^1.0
-    - ./vendor/bin/coveralls
+    - if [[ $TEST_COVERAGE == 'true' ]]; ./vendor/bin/coveralls ; fi
