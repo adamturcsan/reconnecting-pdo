@@ -194,9 +194,6 @@ class ReconnectingPDOStatement
         if (!empty($this->seedData)) {
             /* @var $method string bindParam, bindColumn or bindValue */
             foreach ($this->seedData as $method => $arguments) {
-                if ($method === 'execute') {
-                    continue;
-                }
                 /* @var $key string Parameter name */
                 foreach ($arguments as $key => $params) {
                     list($name,, $paramType) = $params;
@@ -261,9 +258,6 @@ class ReconnectingPDOStatement
      */
     protected function execute(array $parameters = null)
     {
-        if($parameters != null && count($parameters)) {
-            $this->seedData['execute'] = $parameters;
-        }
         $success = call_user_func([$this->statement, 'execute'], $parameters);
         $this->executed = true;
         return $success;
