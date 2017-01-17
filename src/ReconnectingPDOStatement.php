@@ -149,7 +149,8 @@ class ReconnectingPDOStatement
                     $this->trackCursor();
                     break;
                 case 'execute':
-                    $this->executed = true;
+                    $parameters = isset($arguments[0]) ? $arguments[0] : null;
+                    return $this->execute($parameters);
                     break;
                 default:
                     break;
@@ -193,12 +194,14 @@ class ReconnectingPDOStatement
         if (!empty($this->seedData)) {
             /* @var $method string bindParam, bindColumn or bindValue */
             foreach ($this->seedData as $method => $arguments) {
+                if ($method === 'execute') {
+                    continue;
+                }
                 /* @var $key string Parameter name */
                 foreach ($arguments as $key => $params) {
                     list($name,, $paramType) = $params;
                     // Value comes from the seedData array, because bindParam only takes it by reference
-                    $statement->$method($name,
-                            $this->seedData[$method][$key][1], $paramType);
+                    $statement->$method($name, $this->seedData[$method][$key][1], $paramType);
                 }
             }
         }
@@ -251,6 +254,19 @@ class ReconnectingPDOStatement
         $this->seedData['bindColumn'][$column] = &$param;
         return $this->statement->bindColumn($column, $param, $type, $maxlen,
                         $driverdata);
+    }
+    /**
+     * Executes a prepared statement
+     * @param array $parameters [optional]
+     */
+    protected function execute(array $parameters = null)
+    {
+        if($parameters != null && count($parameters)) {
+            $this->seedData['execute'] = $parameters;
+        }
+        $success = call_user_func([$this->statement, 'execute'], $parameters);
+        $this->executed = true;
+        return $success;
     }
 
     /**

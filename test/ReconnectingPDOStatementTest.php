@@ -421,5 +421,31 @@ class ReconnectingPDOStatementTest extends \PHPUnit_Framework_TestCase
         $stm->setFetchMode(\PDO::FETCH_NUM);
         $this->assertEquals(array_values($this->testDBData[1]), $stm->fetch());
     }
+    
+    public function testExecuteWithParameters()
+    {        
+        // Create failing statement while execute
+        $mockStm = $this->getMockBuilder(PDOStatement::class)->getMock();
+        $mockStm->method('execute')->will($this->throwException(new \PDOException('Mysql server has gone away')));
+
+        // Create reconnecting PDO
+        $rPDO = new ReconnectingPDO($this->testDSN, '', '');
+
+        $rstm = new ReconnectingPDOStatement($mockStm, $rPDO);
+
+        // Set query string to have working querystring while recreation
+        $reflection = new \ReflectionClass($rstm);
+        $queryStringProperty = $reflection->getProperty('queryString');
+        $queryStringProperty->setAccessible(true);
+        $queryStringProperty->setValue($rstm, 'SELECT :value, :param;');
+
+        $value = $param = 'value';
+        $rstm->execute([
+            'value' => $value,
+            'param' => $param
+        ]);
+
+        $this->assertEquals([$value, $param], $rstm->fetch(PDO::FETCH_NUM));
+    }
 
 }
