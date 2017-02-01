@@ -9,7 +9,6 @@
 
 namespace LegoW\ReconnectingPDO\Test;
 
-use PHPUnit\Framework\TestCase;
 use LegoW\ReconnectingPDO\ReconnectingPDO;
 use LegoW\ReconnectingPDO\ReconnectingPDOStatement;
 use LegoW\ReconnectingPDO\ConnectionParametersMissingException;
@@ -20,7 +19,7 @@ use LegoW\ReconnectingPDO\ExceededMaxReconnectionException;
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  */
-class ReconnectingPDOTest extends TestCase
+class ReconnectingPDOTest extends \PHPUnit_Framework_TestCase
 {
 
     public function testConstruct()
@@ -78,7 +77,9 @@ class ReconnectingPDOTest extends TestCase
         $dsn = 'sqlite::memory:';
         $username = '';
         $passwd = '';
-        $mockPDO = $this->createMock(\PDO::class);
+        $mockPDO = $this->getMockBuilder(\PDO::class)
+                    ->setConstructorArgs(['sqlite::memory:'])
+                    ->getMock();
 
         $mockPDO->method('prepare')
                 ->will(
@@ -120,7 +121,9 @@ class ReconnectingPDOTest extends TestCase
      */
     public function testExceptionThrowUp()
     {
-        $mockPDO = $this->createMock(\PDO::class);
+        $mockPDO = $this->getMockBuilder(\PDO::class)
+                    ->setConstructorArgs(['sqlite::memory:'])
+                    ->getMock();
 
         $mockPDO->method('prepare')
                 ->will($this->throwException(new \PDOException('Test exception')));
