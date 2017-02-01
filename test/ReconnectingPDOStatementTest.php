@@ -9,7 +9,6 @@
 
 namespace LegoW\ReconnectingPDO\Test;
 
-use PHPUnit\Framework\TestCase;
 use PDO;
 use PDOStatement;
 use LegoW\ReconnectingPDO\ReconnectingPDO;
@@ -21,7 +20,7 @@ use LegoW\ReconnectingPDO\Test\Mock\FetchObjectTestClass;
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
  */
-class ReconnectingPDOStatementTest extends TestCase
+class ReconnectingPDOStatementTest extends \PHPUnit_Framework_TestCase
 {
 
     /**
@@ -129,8 +128,8 @@ class ReconnectingPDOStatementTest extends TestCase
 
     public function testGetPDOStatement()
     {
-        $mockStatement = $this->createMock(PDOStatement::class);
-        $mockRPDO = $this->createMock(ReconnectingPDO::class);
+        $mockStatement = $this->getMockBuilder(PDOStatement::class)->getMock();
+        $mockRPDO = $this->getMockBuilder(ReconnectingPDO::class)->getMock();
 
         $rstm = new ReconnectingPDOStatement($mockStatement, $mockRPDO);
 
@@ -141,13 +140,15 @@ class ReconnectingPDOStatementTest extends TestCase
     public function testPreparedRecreation()
     {
         // Create failing statement while fecthing
-        $mockStm = $this->createMock(PDOStatement::class);
+        $mockStm = $this->getMockBuilder(PDOStatement::class)->getMock();
         $mockStm->method('fetch')->will($this->throwException(new \PDOException('Mysql server has gone away')));
         $mockStm->method('execute')->willReturn(true);
 
         // Create reconnecting PDO
         $rPDO = new ReconnectingPDO($this->testDSN, '', '');
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->getMockBuilder(PDO::class)
+                    ->setConstructorArgs([$this->testDSN])
+                    ->getMock();
         $pdo->method('prepare')->will($this->throwException(new \PDOException('Mysql server has gone away')));
         $rPDO->setPDO($pdo);
 
@@ -174,13 +175,15 @@ class ReconnectingPDOStatementTest extends TestCase
     {
 
         // Create failing statement while fecthing
-        $mockStm = $this->createMock(PDOStatement::class);
+        $mockStm = $this->getMockBuilder(PDOStatement::class)->getMock();
         $mockStm->method('fetch')->will($this->throwException(new \PDOException('Mysql server has gone away')));
         $mockStm->method('execute')->willReturn(true);
 
         // Create reconnecting PDO
         $rPDO = new ReconnectingPDO($this->testDSN, '', '');
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->getMockBuilder(PDO::class)
+                    ->setConstructorArgs([$this->testDSN])
+                    ->getMock();
         $pdo->method('query')->will($this->throwException(new \PDOException('Mysql server has gone away')));
         $rPDO->setPDO($pdo);
 
@@ -201,13 +204,15 @@ class ReconnectingPDOStatementTest extends TestCase
     public function testBindingRecreation()
     {
         // Create failing statement while fecthing
-        $mockStm = $this->createMock(PDOStatement::class);
+        $mockStm = $this->getMockBuilder(PDOStatement::class)->getMock();
         $mockStm->method('fetch')->will($this->throwException(new \PDOException('Mysql server has gone away')));
         $mockStm->method('execute')->willReturn(true);
 
         // Create reconnecting PDO
         $rPDO = new ReconnectingPDO($this->testDSN, '', '');
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->getMockBuilder(PDO::class)
+                    ->setConstructorArgs([$this->testDSN])
+                    ->getMock();
         $pdo->method('prepare')->will($this->throwException(new \PDOException('Mysql server has gone away')));
         $rPDO->setPDO($pdo);
 
@@ -232,13 +237,15 @@ class ReconnectingPDOStatementTest extends TestCase
      */
     public function testExceptionUpbubbling()
     {
-        $mockStm = $this->createMock(PDOStatement::class);
+        $mockStm = $this->getMockBuilder(PDOStatement::class)->getMock();
         $mockStm->method('fetch')->will($this->throwException(new \PDOException));
         $mockStm->method('execute')->willReturn(true);
 
         // Create reconnecting PDO
         $rPDO = new ReconnectingPDO($this->testDSN, '', '');
-        $pdo = $this->createMock(PDO::class);
+        $pdo = $this->getMockBuilder(PDO::class)
+                    ->setConstructorArgs([$this->testDSN])
+                    ->getMock();
         $rPDO->setPDO($pdo);
 
         $rstm = new ReconnectingPDOStatement($mockStm, $rPDO);
@@ -413,6 +420,32 @@ class ReconnectingPDOStatementTest extends TestCase
         $this->assertEquals($this->testDBData[0], $stm->fetch());
         $stm->setFetchMode(\PDO::FETCH_NUM);
         $this->assertEquals(array_values($this->testDBData[1]), $stm->fetch());
+    }
+    
+    public function testExecuteWithParameters()
+    {        
+        // Create failing statement while execute
+        $mockStm = $this->getMockBuilder(PDOStatement::class)->getMock();
+        $mockStm->method('execute')->will($this->throwException(new \PDOException('Mysql server has gone away')));
+
+        // Create reconnecting PDO
+        $rPDO = new ReconnectingPDO($this->testDSN, '', '');
+
+        $rstm = new ReconnectingPDOStatement($mockStm, $rPDO);
+
+        // Set query string to have working querystring while recreation
+        $reflection = new \ReflectionClass($rstm);
+        $queryStringProperty = $reflection->getProperty('queryString');
+        $queryStringProperty->setAccessible(true);
+        $queryStringProperty->setValue($rstm, 'SELECT :value, :param;');
+
+        $value = $param = 'value';
+        $rstm->execute([
+            'value' => $value,
+            'param' => $param
+        ]);
+
+        $this->assertEquals([$value, $param], $rstm->fetch(PDO::FETCH_NUM));
     }
 
 }
