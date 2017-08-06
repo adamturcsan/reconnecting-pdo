@@ -14,9 +14,6 @@ matrix:
         - php: 5.5
           env:
               - DEPS=locked
-        - php: 5.5
-          env:
-              - DEPS=latest
         - php: 5.6
           env:
               - DEPS=lowest
@@ -24,9 +21,6 @@ matrix:
           env:
               - DEPS=locked
               - TEST_COVERAGE=true
-        - php: 5.6
-          env:
-              - DEPS=latest
         - php: 7.0
           env:
               - DEPS=lowest
