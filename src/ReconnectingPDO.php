@@ -20,14 +20,12 @@ use LegoW\ReconnectingPDO\ReconnectingPDOException;
  * The default error handling is set to Exception instead \PDO::ERRMODE_SILENT.
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
- * @method PDOStatement|bool prepare(string $statement, array $driver_options = 'array()' [optional]) Prepares a statement for execution and returns a statement object
  * @method bool beginTransaction() Initiates a transaction
  * @method bool commit() Commits a transaction
  * @method bool rollBack() Rolls back a transaction
  * @method bool inTransaction() Checks if inside a transaction
  * @method bool setAttribute(int $attribute, mixed $value) Set an attribute
  * @method int exec(string $statement The SQL statement to prepare and execute) Execute an SQL statement and return the number of affected rows. Returns the number of rows that were modified or deleted by the SQL statement you issued.
- * @method PDOStatement|bool query(string $statement The SQL statement to prepare and execute.) Executes an SQL statement, returning a result set as a PDOStatement object
  * @method string lastInsertId(string $name = null Name of the sequence object from which the ID should be returned.) Returns the ID of the last inserted row or sequence value
  * @method mixed errorCode() Fetch the SQLSTATE associated with the last operation on the database handle. Returns an <b>SQLSTATE</b> or <b>NULL</b> if no operation has been run
  * @method array errorInfo() Fetch extended error information associated with the last operation on the database handle
@@ -195,6 +193,27 @@ class ReconnectingPDO
                 $this->$key = $param;
             }
         }
+    }
+
+    /**
+     * Prepares a statement for execution and returns a statement object
+     * @param type $statement
+     * @param array $driver_options [optional]
+     * @return ReconnectingPDOStatement|bool
+     */
+    public function prepare($statement, array $driver_options = [])
+    {
+        return $this->call('prepare', [$statement, $driver_options]);
+    }
+
+    /**
+     * Executes an SQL statement, returning a result set as a PDOStatement object
+     * @param string $statement The SQL statement to prepare and execute.
+     * @return ReconnectingPDOStatement|bool
+     */
+    public function query($statement)
+    {
+        return $this->call('query', [$statement]);
     }
 
     public function setPDO(PDO $pdoObject)
