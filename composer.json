@@ -33,6 +33,7 @@
     "require-dev": {
         "ext-pdo_sqlite": "*",
         "ext-xml": "*",
-        "phpunit/phpunit": "^4.7"
+        "phpunit/phpunit": "^4.7",
+        "humbug/humbug": "1.0.0-alpha2"
     }
 }
