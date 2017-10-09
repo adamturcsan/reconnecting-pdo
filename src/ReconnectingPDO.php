@@ -96,11 +96,6 @@ class ReconnectingPDO extends PDO
         $this->resetCounter();
     }
 
-    public function __call($method, $arguments)
-    {
-        return $this->call($method, $arguments); // Avoid direct calling of magic method
-    }
-
     /**
      * @param string $method
      * @param array $arguments
