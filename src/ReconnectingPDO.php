@@ -20,19 +20,8 @@ use LegoW\ReconnectingPDO\ReconnectingPDOException;
  * The default error handling is set to Exception instead \PDO::ERRMODE_SILENT.
  *
  * @author Turcsán Ádám <turcsan.adam@legow.hu>
- * @method bool beginTransaction() Initiates a transaction
- * @method bool commit() Commits a transaction
- * @method bool rollBack() Rolls back a transaction
- * @method bool inTransaction() Checks if inside a transaction
- * @method bool setAttribute(int $attribute, mixed $value) Set an attribute
- * @method int exec(string $statement The SQL statement to prepare and execute) Execute an SQL statement and return the number of affected rows. Returns the number of rows that were modified or deleted by the SQL statement you issued.
- * @method string lastInsertId(string $name = null Name of the sequence object from which the ID should be returned.) Returns the ID of the last inserted row or sequence value
- * @method mixed errorCode() Fetch the SQLSTATE associated with the last operation on the database handle. Returns an <b>SQLSTATE</b> or <b>NULL</b> if no operation has been run
- * @method array errorInfo() Fetch extended error information associated with the last operation on the database handle
- * @method mixed getAttribute(int $attribute One of the PDO::ATTR_* constants.) Retrieve a database connection attribute
- * @method string quote(string $string The string to be quoted, int $parameter_type = 'PDO::PARAM_STR') Quotes a string for use in a query.
  */
-class ReconnectingPDO
+class ReconnectingPDO extends PDO
 {
 
     /**
@@ -201,9 +190,97 @@ class ReconnectingPDO
      * @param array $driver_options [optional]
      * @return ReconnectingPDOStatement|bool
      */
-    public function prepare($statement, array $driver_options = [])
+    public function prepare($statement, $driver_options = [])
     {
         return $this->call('prepare', [$statement, $driver_options]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function exec($statement)
+    {
+        return $this->call('exec', [$statement]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function quote($string, $parameter_type = null)
+    {
+        return $this->call('quote', [$string, $parameter_type]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function beginTransaction()
+    {
+        return $this->call('beginTransaction', []);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function rollBack()
+    {
+        return $this->call('rollBack', []);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function commit()
+    {
+        return $this->call('commit', []);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function errorCode()
+    {
+        return $this->call('errorCode', []);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function errorInfo()
+    {
+        return $this->call('errorInfo', []);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function lastInsertId($name = null)
+    {
+        return $this->call('lastInsertId', [$name]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function getAttribute($attribute)
+    {
+        return $this->call('getAttribute', [$attribute]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function setAttribute($attribute, $value)
+    {
+        return $this->call('setAttribute', [$attribute, $value]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function inTransaction()
+    {
+        return $this->call('inTransaction', []);
     }
 
     /**
