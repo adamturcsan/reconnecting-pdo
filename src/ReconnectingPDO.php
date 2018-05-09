@@ -296,6 +296,14 @@ class ReconnectingPDO extends PDO
         $this->connection = $pdoObject;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public function sqliteCreateFunction($functionName, callable $callback, $num_args = -1)
+    {
+        return $this->call('sqliteCreateFunction', [$functionName, $callback, $num_args]);
+    }
+
     protected function connectionParametersAreSet()
     {
         if ($this->dsn !== null && $this->username !== null && $this->passwd !== null) {
