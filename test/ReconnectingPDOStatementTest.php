@@ -2,7 +2,7 @@
 
 /*
  * LegoW\ReconnectingPDO (https://github.com/adamturcsan/reconnecting-pdo)
- * 
+ *
  * @copyright Copyright (c) 2014-2016 LegoW Hosting Kft. (http://www.legow.hu)
  * @license https://opensource.org/licenses/MIT MIT License
  */
@@ -225,7 +225,7 @@ class ReconnectingPDOStatementTest extends \PHPUnit_Framework_TestCase
         $queryStringProperty->setValue($rstm, 'SELECT :value, :param;');
 
         $value = $param = 'value';
-        $rstm->bindValue('value', $value, PDO::PARAM_STR);
+        $rstm->bindValue('value', $value);
         $rstm->bindParam('param', $param, PDO::PARAM_STR);
         $rstm->execute();
 
@@ -421,9 +421,9 @@ class ReconnectingPDOStatementTest extends \PHPUnit_Framework_TestCase
         $stm->setFetchMode(\PDO::FETCH_NUM);
         $this->assertEquals(array_values($this->testDBData[1]), $stm->fetch());
     }
-    
+
     public function testExecuteWithParameters()
-    {        
+    {
         // Create failing statement while execute
         $mockStm = $this->getMockBuilder(PDOStatement::class)->getMock();
         $mockStm->method('execute')->will($this->throwException(new \PDOException('Mysql server has gone away')));
