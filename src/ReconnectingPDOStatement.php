@@ -2,7 +2,7 @@
 
 /*
  * LegoW\ReconnectingPDO (https://github.com/adamturcsan/reconnecting-pdo)
- * 
+ *
  * @copyright Copyright (c) 2014-2016 Legow Hosting Kft. (http://www.legow.hu)
  * @license https://opensource.org/licenses/MIT MIT License
  */
@@ -96,10 +96,11 @@ class ReconnectingPDOStatement
      * @param PDOStatement $statement
      * @param ReconnectingPDO $connection
      */
-    public function __construct(PDOStatement $statement,
-            ReconnectingPDO $connection, $isQuery = false,
-            StatementCursor $cursor = null)
-    {
+    public function __construct(
+        PDOStatement $statement,
+        ReconnectingPDO $connection, $isQuery = false,
+        StatementCursor $cursor = null
+    ) {
         $this->statement = $statement;
         $this->queryString = $statement->queryString;
         $this->connection = $connection;
@@ -111,7 +112,7 @@ class ReconnectingPDOStatement
     }
 
     /**
-     * 
+     *
      * @param string $method
      * @param array $arguments
      * @return mixed
@@ -142,7 +143,7 @@ class ReconnectingPDOStatement
                         ${'a' . $i} = &$arguments[$i];
                     }
                     return $this->statement->bindParam($a0, $a1, $a2, $a3, $a4);
-                //Pre-call 
+                //Pre-call
                 case 'fetch':
                 case 'fetchColumn':
                 case 'fetchObject':
@@ -196,9 +197,17 @@ class ReconnectingPDOStatement
             foreach ($this->seedData as $method => $arguments) {
                 /* @var $key string Parameter name */
                 foreach ($arguments as $key => $params) {
-                    list($name,, $paramType) = $params;
-                    // Value comes from the seedData array, because bindParam only takes it by reference
-                    $statement->$method($name, $this->seedData[$method][$key][1], $paramType);
+                    $paramType = isset($params[2]) ? $params[2] : null;
+                    $bindParams = [
+                        'name' => $params[0],
+                        // Value comes from the seedData array, because bindParam only takes it by reference
+                        'parameter' => $this->seedData[$method][$key][1],
+                    ];
+                    // Parameter type is an optional argument
+                    if ($paramType !== null) {
+                        $bindParams['type'] = $paramType;
+                    }
+                    call_user_method_array($method, $statement, $bindParams);
                 }
             }
         }
@@ -224,7 +233,7 @@ class ReconnectingPDOStatement
     }
 
     /**
-     * 
+     *
      * @param int $steps
      */
     protected function forwardCursor($steps)
@@ -237,7 +246,7 @@ class ReconnectingPDOStatement
 
     /**
      * Bind a column to a PHP variable
-     * 
+     *
      * @param mixed $column
      * @param mixed $param
      * @param int $type [optional]
@@ -264,8 +273,8 @@ class ReconnectingPDOStatement
     }
 
     /**
-     * Fetches the next row from a result set 
-     * 
+     * Fetches the next row from a result set
+     *
      * @param int $fetchType [optional]
      * @param int $cursor_orientation = PDO::FETCH_ORI_NEXT
      * @param int $cursor_offset = 0
@@ -290,8 +299,8 @@ class ReconnectingPDOStatement
     }
 
     /**
-     * Returns an array containing all of the result set rows 
-     * 
+     * Returns an array containing all of the result set rows
+     *
      * @param int $fetch_style = \PDO::FETCH_BOTH
      * @param mixed $fetch_argument [optional]
      * @param array $ctor_args = []
