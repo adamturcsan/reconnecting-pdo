@@ -195,20 +195,7 @@ class ReconnectingPDOStatement
         if (!empty($this->seedData)) {
             /* @var $method string bindParam, bindColumn or bindValue */
             foreach ($this->seedData as $method => $arguments) {
-                /* @var $key string Parameter name */
-                foreach ($arguments as $key => $params) {
-                    $paramType = isset($params[2]) ? $params[2] : null;
-                    $bindParams = [
-                        'name' => $params[0],
-                        // Value comes from the seedData array, because bindParam only takes it by reference
-                        'parameter' => $this->seedData[$method][$key][1],
-                    ];
-                    // Parameter type is an optional argument
-                    if ($paramType !== null) {
-                        $bindParams['type'] = $paramType;
-                    }
-                    call_user_method_array($method, $statement, $bindParams);
-                }
+                $this->rebindData($statement, $method, $arguments);
             }
         }
         $this->statement = $statement;
@@ -217,6 +204,21 @@ class ReconnectingPDOStatement
             $this->searchPosition();
         }
     }
+
+    private function rebindData($statement, $method, $arguments)
+    {
+        foreach ($arguments as $key => $params) {
+            $paramType = isset($params[2]) ? $params[2] : null;
+            $name = $params[0];
+            // Parameter type is an optional argument
+            if ($paramType !== null) {
+                $statement->$method($name, $this->seedData[$method][$key][1], $paramType);
+            } else {
+                $statement->$method($name, $this->seedData[$method][$key][1]);
+            }
+        }
+    }
+
 
     protected function trackCursor()
     {
