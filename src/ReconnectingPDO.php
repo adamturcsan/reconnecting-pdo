@@ -181,7 +181,7 @@ class ReconnectingPDO extends PDO
 
     /**
      * Prepares a statement for execution and returns a statement object
-     * @param type $statement
+     * @param string $statement
      * @param array $driver_options [optional]
      * @return ReconnectingPDOStatement|bool
      */
